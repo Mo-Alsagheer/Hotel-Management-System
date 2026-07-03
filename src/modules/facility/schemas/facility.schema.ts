@@ -7,9 +7,6 @@ export type FacilityDocument = Facility & Document;
 export class Facility {
   @Prop({ required: true, unique: true, trim: true })
   name: string;
-
-  @Prop({ trim: true })
-  description?: string;
 }
 
 export const FacilitySchema = SchemaFactory.createForClass(Facility);
