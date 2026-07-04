@@ -6,6 +6,8 @@ import { validate } from './core/config/env.validation';
 import { DatabaseModule } from './core/database/database.module';
 import { RoomModule } from './modules/room/room.module';
 import { FacilityModule } from './modules/facility/facility.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { FacilityModule } from './modules/facility/facility.module';
     DatabaseModule,
     RoomModule,
     FacilityModule,
+    AuthModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
