@@ -13,3 +13,4 @@ export class Favorite {
 }
 
 export const FavoriteSchema = SchemaFactory.createForClass(Favorite);
+FavoriteSchema.index({ userId: 1, roomId: 1 }, { unique: true });
