@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type OfferDocument = Offer & Document;
 
@@ -16,6 +16,18 @@ export class Offer {
 
   @Prop()
   image?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Room', required: false })
+  roomId?: Types.ObjectId;
+
+  @Prop({ type: Date, required: false })
+  startDate?: Date;
+
+  @Prop({ type: Date, required: false })
+  endDate?: Date;
+
+  @Prop({ default: true, index: true })
+  isActive: boolean;
 }
 
 export const OfferSchema = SchemaFactory.createForClass(Offer);

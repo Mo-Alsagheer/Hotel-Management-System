@@ -35,7 +35,11 @@ export class User {
   })
   password: string;
 
-  @Prop()
+  @Prop({
+    unique: true,
+    sparse: true,
+    trim: true,
+  })
   phone?: string;
 
   @Prop({
@@ -46,11 +50,13 @@ export class User {
   @Prop({
     enum: UserRole,
     default: UserRole.USER,
+    index: true,
   })
   role: UserRole;
 
   @Prop({
     default: true,
+    index: true,
   })
   isActive: boolean;
 }
