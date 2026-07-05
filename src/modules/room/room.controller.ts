@@ -10,6 +10,7 @@ import {
   Req,
   UseInterceptors,
   UploadedFiles,
+  UseGuards,
 } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dtos/create-room.dto';
@@ -17,12 +18,20 @@ import { UpdateRoomDto } from './dtos/update-room.dto';
 import { RoomQueryDto } from './dtos/room-query.dto';
 import * as requestInterface from '../../common/interfaces/request.interface';
 import { LocalFilesInterceptor } from '../../common/interceptors/local-files.interceptor';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../user/schemas/user.schema';
 
 @Controller()
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
   // 1. Admin: Create Room
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Post('admin/rooms')
   @UseInterceptors(
     LocalFilesInterceptor({
@@ -42,6 +51,9 @@ export class RoomController {
   }
 
   // 2. Admin: Get All Rooms
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Get('admin/rooms')
   async findAllAdmin(
     @Query() query: RoomQueryDto,
@@ -52,6 +64,9 @@ export class RoomController {
   }
 
   // 3. Admin: Get Single Room
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Get('admin/rooms/:id')
   async findOneAdmin(
     @Param('id') id: string,
@@ -62,6 +77,9 @@ export class RoomController {
   }
 
   // 4. Admin: Update Room
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Put('admin/rooms/:id')
   @UseInterceptors(
     LocalFilesInterceptor({
@@ -82,6 +100,9 @@ export class RoomController {
   }
 
   // 5. Admin: Delete Room
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Delete('admin/rooms/:id')
   async delete(
     @Param('id') id: string,
