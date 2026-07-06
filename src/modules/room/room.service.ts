@@ -17,6 +17,7 @@ import { Review, ReviewDocument } from '../review/schemas/review.schema';
 import { FacilityService } from '../facility/facility.service';
 import { CreateRoomDto } from './dtos/create-room.dto';
 import { UpdateRoomDto } from './dtos/update-room.dto';
+import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -71,13 +72,7 @@ export class RoomService {
     page = 1,
     limit = 10,
     search?: string,
-  ): Promise<{
-    data: Room[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
+  ): Promise<PaginatedResponse<Room>> {
     const query: QueryFilter<Room> = { isDeleted: false };
 
     if (search) {
@@ -115,13 +110,7 @@ export class RoomService {
     checkIn?: Date,
     checkOut?: Date,
     capacity?: number,
-  ): Promise<{
-    data: Room[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
+  ): Promise<PaginatedResponse<Room>> {
     const query: QueryFilter<Room> = { isDeleted: false };
 
     // Capacity filter: must be at least requested capacity

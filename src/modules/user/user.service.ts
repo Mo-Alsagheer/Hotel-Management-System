@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { PaginationQueryDto } from '../../common/dtos/pagination-query.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
 import { User, UserDocument } from './schemas/user.schema';
+import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
 
 @Injectable()
 export class UserService {
@@ -12,7 +13,10 @@ export class UserService {
     private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async findAll(query: UserQueryDto, pagination: PaginationQueryDto) {
+  async findAll(
+    query: UserQueryDto,
+    pagination: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Partial<User>>> {
     const { search } = query;
     const { page = 1, limit = 10 } = pagination;
     const filter: Record<string, unknown> = { isActive: true };

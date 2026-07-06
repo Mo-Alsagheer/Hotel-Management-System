@@ -8,6 +8,7 @@ import { Model } from 'mongoose';
 import { Facility, FacilityDocument } from './schemas/facility.schema';
 import { CreateFacilityDto } from './dtos/create-facility.dto';
 import { UpdateFacilityDto } from './dtos/update-facility.dto';
+import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
 
 @Injectable()
 export class FacilityService {
@@ -29,16 +30,7 @@ export class FacilityService {
     }
   }
 
-  async findAll(
-    page = 1,
-    limit = 10,
-  ): Promise<{
-    data: Facility[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
+  async findAll(page = 1, limit = 10): Promise<PaginatedResponse<Facility>> {
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.facilityModel.find().skip(skip).limit(limit).exec(),

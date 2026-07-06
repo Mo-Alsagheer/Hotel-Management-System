@@ -8,6 +8,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { RoomModule } from './modules/room/room.module';
 import { FacilityModule } from './modules/facility/facility.module';
+import { OfferModule } from './modules/offer/offer.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { FacilityModule } from './modules/facility/facility.module';
     UserModule,
     RoomModule,
     FacilityModule,
+    OfferModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
