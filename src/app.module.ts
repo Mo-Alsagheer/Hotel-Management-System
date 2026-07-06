@@ -4,6 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validate } from './core/config/env.validation';
 import { DatabaseModule } from './core/database/database.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
+import { RoomModule } from './modules/room/room.module';
+import { FacilityModule } from './modules/facility/facility.module';
 
 @Module({
   imports: [
@@ -13,6 +17,10 @@ import { DatabaseModule } from './core/database/database.module';
       validate,
     }),
     DatabaseModule,
+    AuthModule,
+    UserModule,
+    RoomModule,
+    FacilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
