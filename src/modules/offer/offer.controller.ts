@@ -7,22 +7,22 @@ import {
   Body,
   Param,
   Query,
-  Req,
   UseInterceptors,
   UploadedFile,
   UseGuards,
 } from '@nestjs/common';
-import { OfferService } from './offer.service';
+import { OfferService } from './interfaces/offer-service.interface';
 import { CreateOfferDto } from './dtos/create-offer.dto';
 import { UpdateOfferDto } from './dtos/update-offer.dto';
 import { OfferQueryDto } from './dtos/offer-query.dto';
-import * as requestInterface from '../../common/interfaces/request.interface';
 import { ApiBearerAuth, ApiTags, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../user/schemas/user.schema';
 import { LocalFilesInterceptor } from '../../common/interceptors/local-files.interceptor';
+import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
+import { SuccessMessage } from '../../common/decorators/success-message.decorator';
 
 @ApiTags('Offers')
 @Controller()
@@ -34,21 +34,22 @@ export class OfferController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiConsumes('multipart/form-data')
+  @SuccessMessage('Offer created successfully')
   @Post('admin/offers')
   @UseInterceptors(
     LocalFilesInterceptor({
       fieldName: 'image',
       path: './uploads/offers',
       type: 'single',
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'],
+      maxFileSize: 5 * 1024 * 1024,
     }),
   )
   async create(
     @UploadedFile() file: Express.Multer.File,
     @Body() createOfferDto: CreateOfferDto,
-    @Req() req: requestInterface.CustomRequest,
   ) {
     const imagePath = file ? `/uploads/offers/${file.filename}` : undefined;
-    req.successMessage = 'Offer created successfully';
     return this.offerService.create(createOfferDto, imagePath);
   }
 
@@ -56,12 +57,9 @@ export class OfferController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Offers retrieved successfully')
   @Get('admin/offers')
-  async findAllAdmin(
-    @Query() query: OfferQueryDto,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Offers retrieved successfully';
+  async findAllAdmin(@Query() query: OfferQueryDto) {
     return this.offerService.findAll(query.page, query.limit);
   }
 
@@ -70,22 +68,23 @@ export class OfferController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiConsumes('multipart/form-data')
+  @SuccessMessage('Offer updated successfully')
   @Put('admin/offers/:id')
   @UseInterceptors(
     LocalFilesInterceptor({
       fieldName: 'image',
       path: './uploads/offers',
       type: 'single',
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'],
+      maxFileSize: 5 * 1024 * 1024,
     }),
   )
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() updateOfferDto: UpdateOfferDto,
-    @Req() req: requestInterface.CustomRequest,
   ) {
     const imagePath = file ? `/uploads/offers/${file.filename}` : undefined;
-    req.successMessage = 'Offer updated successfully';
     return this.offerService.update(id, updateOfferDto, imagePath);
   }
 
@@ -93,32 +92,23 @@ export class OfferController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Offer deleted successfully')
   @Delete('admin/offers/:id')
-  async delete(
-    @Param('id') id: string,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Offer deleted successfully';
+  async delete(@Param('id', ParseObjectIdPipe) id: string) {
     return this.offerService.delete(id);
   }
 
   // Public: Get All Offers
+  @SuccessMessage('Offers retrieved successfully')
   @Get('offers')
-  async findAllPublic(
-    @Query() query: OfferQueryDto,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Offers retrieved successfully';
+  async findAllPublic(@Query() query: OfferQueryDto) {
     return this.offerService.findAll(query.page, query.limit);
   }
 
   // Public: Get Single Offer
+  @SuccessMessage('Offer retrieved successfully')
   @Get('offers/:id')
-  async findOne(
-    @Param('id') id: string,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Offer retrieved successfully';
+  async findOne(@Param('id', ParseObjectIdPipe) id: string) {
     return this.offerService.findOne(id);
   }
 }
