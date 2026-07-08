@@ -44,6 +44,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       } else if (typeof resBody === 'string') {
         message = resBody;
       }
+    } else if (exception instanceof Error && exception.name === 'MulterError') {
+      const multerError = exception as { code?: string; message?: string };
+      if (multerError.code === 'LIMIT_FILE_SIZE') {
+        status = HttpStatus.PAYLOAD_TOO_LARGE;
+        message = 'File size is too large. Maximum limit is 5MB.';
+      } else {
+        status = HttpStatus.BAD_REQUEST;
+        message = multerError.message || 'File upload error';
+      }
     } else if (exception instanceof Error) {
       message = exception.message;
     }
