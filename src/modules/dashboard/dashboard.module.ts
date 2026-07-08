@@ -1,11 +1,16 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
-import { DashboardService } from './dashboard.service';
 import { DashboardController } from './dashboard.controller';
 import { Room, RoomSchema } from '../room/schemas/room.schema';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { Booking, BookingSchema } from '../booking/schemas/booking.schema';
+
+// Concrete implementation
+import { MongooseDashboardService } from './dashboard.service';
+
+// Abstract contract
+import { DashboardService } from './interfaces/dashboard-service.interface';
 
 @Module({
   imports: [
@@ -19,6 +24,8 @@ import { Booking, BookingSchema } from '../booking/schemas/booking.schema';
     }),
   ],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [
+    { provide: DashboardService, useClass: MongooseDashboardService },
+  ],
 })
 export class DashboardModule {}

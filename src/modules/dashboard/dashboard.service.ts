@@ -14,15 +14,18 @@ import {
   DashboardStats,
   DashboardChartData,
 } from './interfaces/dashboard.interface';
+import { DashboardService } from './interfaces/dashboard-service.interface';
 
 @Injectable()
-export class DashboardService {
+export class MongooseDashboardService extends DashboardService {
   constructor(
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) {
+    super();
+  }
 
   async getStats(): Promise<DashboardStats> {
     const cacheKey = 'dashboard:stats';
@@ -123,6 +126,7 @@ export class DashboardService {
       .limit(10)
       .populate('userId', 'name email')
       .populate('roomId', 'roomNumber price')
+      .lean()
       .exec();
 
     const result = {

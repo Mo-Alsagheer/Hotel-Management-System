@@ -7,12 +7,15 @@ import { UpdateOfferDto } from './dtos/update-offer.dto';
 import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
 import * as fs from 'fs';
 import * as path from 'path';
+import { OfferService } from './interfaces/offer-service.interface';
 
 @Injectable()
-export class OfferService {
+export class MongooseOfferService extends OfferService {
   constructor(
     @InjectModel(Offer.name) private offerModel: Model<OfferDocument>,
-  ) {}
+  ) {
+    super();
+  }
 
   async create(
     createOfferDto: CreateOfferDto,
@@ -44,6 +47,7 @@ export class OfferService {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
+        .lean()
         .exec(),
       this.offerModel.countDocuments().exec(),
     ]);
@@ -51,7 +55,7 @@ export class OfferService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data,
+      data: data as Offer[],
       total,
       page,
       limit,
@@ -60,11 +64,15 @@ export class OfferService {
   }
 
   async findOne(id: string): Promise<Offer> {
-    const offer = await this.offerModel.findById(id).populate('roomId').exec();
+    const offer = await this.offerModel
+      .findById(id)
+      .populate('roomId')
+      .lean()
+      .exec();
     if (!offer) {
       throw new NotFoundException(`Offer with ID "${id}" not found`);
     }
-    return offer;
+    return offer as Offer;
   }
 
   async update(

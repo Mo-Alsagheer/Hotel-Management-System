@@ -7,20 +7,21 @@ import {
   Body,
   Param,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
-import { FacilityService } from './facility.service';
+import { FacilityService } from './interfaces/facility-service.interface';
 import { CreateFacilityDto } from './dtos/create-facility.dto';
 import { UpdateFacilityDto } from './dtos/update-facility.dto';
 import { FacilityQueryDto } from './dtos/facility-query.dto';
-import * as requestInterface from '../../common/interfaces/request.interface';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../user/schemas/user.schema';
+import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
+import { SuccessMessage } from '../../common/decorators/success-message.decorator';
 
+@ApiTags('Facilities')
 @Controller()
 export class FacilityController {
   constructor(private readonly facilityService: FacilityService) {}
@@ -28,55 +29,42 @@ export class FacilityController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Facility created successfully')
   @Post('admin/facilities')
-  async create(
-    @Body() createFacilityDto: CreateFacilityDto,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Facility created successfully';
+  async create(@Body() createFacilityDto: CreateFacilityDto) {
     return this.facilityService.create(createFacilityDto);
   }
 
+  @SuccessMessage('Facilities retrieved successfully')
   @Get('facilities')
-  async findAll(
-    @Query() query: FacilityQueryDto,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Facilities retrieved successfully';
+  async findAll(@Query() query: FacilityQueryDto) {
     return this.facilityService.findAll(query.page, query.limit);
   }
 
+  @SuccessMessage('Facility retrieved successfully')
   @Get('facilities/:id')
-  async findOne(
-    @Param('id') id: string,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Facility retrieved successfully';
+  async findOne(@Param('id', ParseObjectIdPipe) id: string) {
     return this.facilityService.findOne(id);
   }
 
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Facility updated successfully')
   @Put('admin/facilities/:id')
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @Body() updateFacilityDto: UpdateFacilityDto,
-    @Req() req: requestInterface.CustomRequest,
   ) {
-    req.successMessage = 'Facility updated successfully';
     return this.facilityService.update(id, updateFacilityDto);
   }
 
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Facility deleted successfully')
   @Delete('admin/facilities/:id')
-  async delete(
-    @Param('id') id: string,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Facility deleted successfully';
+  async delete(@Param('id', ParseObjectIdPipe) id: string) {
     return this.facilityService.delete(id);
   }
 }
