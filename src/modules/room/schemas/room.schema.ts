@@ -18,12 +18,14 @@ export class Room {
   @Prop({
     required: true,
     min: 1,
+    index: true,
   })
   capacity: number;
 
   @Prop({
     required: true,
     min: 0,
+    index: true,
   })
   price: number;
 
@@ -42,6 +44,7 @@ export class Room {
   @Prop({
     type: [{ type: Types.ObjectId, ref: 'Facility' }],
     default: [],
+    index: true,
   })
   facilities: Types.ObjectId[];
 
@@ -55,13 +58,16 @@ export class Room {
     default: 0,
     min: 0,
     max: 5,
+    index: true,
   })
   averageRating: number;
 
   @Prop({
     default: false,
+    index: true,
   })
   isDeleted: boolean;
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);
+RoomSchema.index({ isDeleted: 1, price: 1 });

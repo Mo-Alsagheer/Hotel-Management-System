@@ -50,11 +50,13 @@ export class User {
   @Prop({
     enum: UserRole,
     default: UserRole.USER,
+    index: true,
   })
   role: UserRole;
 
   @Prop({
     default: true,
+    index: true,
   })
   isActive: boolean;
 }
