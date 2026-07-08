@@ -43,11 +43,13 @@ async function bootstrap() {
       password: passwordHash,
       role: UserRole.ADMIN,
       isActive: true,
+      isEmailVerified: true,
     });
 
     console.log('Admin account created successfully:', adminEmail);
-  } catch (error: any) {
-    console.error('Failed to create admin account:', error.message || error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Failed to create admin account:', message);
     process.exit(1);
   }
 }

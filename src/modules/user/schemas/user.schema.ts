@@ -59,6 +59,46 @@ export class User {
     index: true,
   })
   isActive: boolean;
+
+  @Prop({
+    default: null,
+  })
+  deletedAt?: Date;
+
+  @Prop({
+    default: null,
+  })
+  deletedBy?: string;
+
+  @Prop({
+    default: null,
+    select: false,
+  })
+  refreshTokenHash?: string;
+
+  @Prop({
+    default: false,
+    index: true,
+  })
+  isEmailVerified: boolean;
+
+  @Prop({
+    default: null,
+    select: false,
+  })
+  emailVerificationToken?: string;
+
+  @Prop({
+    default: null,
+    select: false,
+  })
+  passwordResetToken?: string;
+
+  @Prop({
+    default: null,
+    select: false,
+  })
+  passwordResetExpires?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
