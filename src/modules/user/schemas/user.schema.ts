@@ -35,7 +35,11 @@ export class User {
   })
   password: string;
 
-  @Prop()
+  @Prop({
+    unique: true,
+    sparse: true,
+    trim: true,
+  })
   phone?: string;
 
   @Prop({

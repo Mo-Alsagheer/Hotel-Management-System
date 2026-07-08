@@ -27,7 +27,9 @@ export class AuthService {
       throw new BadRequestException('Passwords do not match.');
     }
 
-    const existing = await this.userModel.findOne({ email: dto.email.toLowerCase() });
+    const existing = await this.userModel.findOne({
+      email: dto.email.toLowerCase(),
+    });
     if (existing) {
       throw new BadRequestException('Email is already registered.');
     }
@@ -99,7 +101,10 @@ export class AuthService {
       throw new NotFoundException('User not found.');
     }
 
-    const currentMatches = await bcrypt.compare(dto.currentPassword, user.password);
+    const currentMatches = await bcrypt.compare(
+      dto.currentPassword,
+      user.password,
+    );
     if (!currentMatches) {
       throw new UnauthorizedException('Current password is incorrect.');
     }

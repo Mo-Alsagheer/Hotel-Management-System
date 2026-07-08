@@ -23,11 +23,14 @@ async function bootstrap() {
     .setTitle('Hotel Management API')
     .setDescription('Hotel management backend API')
     .setVersion('1.0')
-    .addBearerAuth({
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT',
-    }, 'access-token')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

@@ -1,7 +1,11 @@
 import 'dotenv/config';
 import { connect, model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { User, UserSchema, UserRole } from '../modules/user/schemas/user.schema';
+import {
+  User,
+  UserSchema,
+  UserRole,
+} from '../modules/user/schemas/user.schema';
 
 async function bootstrap() {
   const mongoUri = process.env.MONGODB_URI;
@@ -14,7 +18,9 @@ async function bootstrap() {
   }
 
   if (!adminEmail || !adminPassword) {
-    console.error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in environment variables.');
+    console.error(
+      'ADMIN_EMAIL and ADMIN_PASSWORD must be set in environment variables.',
+    );
     process.exit(1);
   }
 
@@ -22,7 +28,9 @@ async function bootstrap() {
   const UserModel = model<User & { _id: any }>('User', UserSchema);
 
   try {
-    const existingUser = await UserModel.findOne({ email: adminEmail.toLowerCase() }).lean();
+    const existingUser = await UserModel.findOne({
+      email: adminEmail.toLowerCase(),
+    }).lean();
     if (existingUser) {
       console.log('Admin account already exists:', adminEmail);
       return;
