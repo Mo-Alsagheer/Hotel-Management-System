@@ -13,7 +13,8 @@ import {
   BookingDocument,
   BookingStatus,
 } from '../booking/schemas/booking.schema';
-import { RoomService } from '../room/room.service';
+import { RoomService } from '../room/interfaces/room-service.interface';
+import { RoomRatingService } from '../room/interfaces/room-rating-service.interface';
 import { CreateReviewDto } from './dtos/create-review.dto';
 
 @Injectable()
@@ -22,6 +23,7 @@ export class ReviewService {
     @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>,
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     private readonly roomService: RoomService,
+    private readonly roomRatingService: RoomRatingService,
   ) {}
 
   async addReview(userId: string, roomId: string, dto: CreateReviewDto) {
@@ -32,30 +34,31 @@ export class ReviewService {
       throw new NotFoundException(`Room with ID "${roomId}" not found`);
     }
 
-    // verify user has a booking for this room (not cancelled)
-    const booking = await this.bookingModel.findOne({
-      userId: new Types.ObjectId(userId),
-      roomId: new Types.ObjectId(roomId),
-      $or: [
-        { status: BookingStatus.CONFIRMED },
-        { status: BookingStatus.COMPLETED },
-        { checkOut: { $lt: new Date() } },
-      ],
-    });
+    // verify user had a booking in this room that is completed/past
+    const completedBooking = await this.bookingModel
+      .findOne({
+        userId: new Types.ObjectId(userId),
+        roomId: new Types.ObjectId(roomId),
+        status: BookingStatus.COMPLETED,
+      })
+      .exec();
 
-    if (!booking) {
+    if (!completedBooking) {
       throw new BadRequestException(
-        'You can only review rooms you have booked',
+        'You can only review rooms you have booked and completed stay in.',
       );
     }
 
-    // prevent duplicate review
-    const existing = await this.reviewModel.findOne({
-      userId: new Types.ObjectId(userId),
-      roomId: new Types.ObjectId(roomId),
-    });
+    // check if already reviewed
+    const existing = await this.reviewModel
+      .findOne({
+        userId: new Types.ObjectId(userId),
+        roomId: new Types.ObjectId(roomId),
+      })
+      .exec();
+
     if (existing) {
-      throw new ConflictException('You have already reviewed this room');
+      throw new ConflictException('You have already reviewed this room.');
     }
 
     const created = await new this.reviewModel({
@@ -65,7 +68,7 @@ export class ReviewService {
       comment: dto.comment,
     }).save();
 
-    await this.roomService.updateAverageRating(roomId);
+    await this.roomRatingService.updateAverageRating(roomId);
 
     return created;
   }
@@ -79,33 +82,19 @@ export class ReviewService {
     }
 
     const skip = (page - 1) * limit;
-    type PopulatedReview = ReviewDocument & {
-      userId: { name?: string; profileImage?: string } | Types.ObjectId;
-      createdAt?: Date;
-    };
-
     const [data, total] = await Promise.all([
       this.reviewModel
         .find({ roomId: new Types.ObjectId(roomId) })
         .populate('userId', 'name profileImage')
         .skip(skip)
         .limit(limit)
-        .exec() as Promise<PopulatedReview[]>,
-      this.reviewModel
-        .countDocuments({ roomId: new Types.ObjectId(roomId) })
+        .lean()
         .exec(),
+      this.reviewModel.countDocuments({ roomId: new Types.ObjectId(roomId) }),
     ]);
 
-    const formatted = data.map((r) => ({
-      id: r._id,
-      rating: r.rating,
-      comment: r.comment,
-      user: r.userId,
-      createdAt: r.createdAt,
-    }));
-
     return {
-      data: formatted,
+      data,
       total,
       page,
       limit,
@@ -129,7 +118,7 @@ export class ReviewService {
 
     const roomId = review.roomId.toString();
     await this.reviewModel.findByIdAndDelete(reviewId).exec();
-    await this.roomService.updateAverageRating(roomId);
+    await this.roomRatingService.updateAverageRating(roomId);
 
     return { deleted: true };
   }

@@ -6,7 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Favorite, FavoriteDocument } from './schemas/favorite.schema';
-import { RoomService } from '../room/room.service';
+import { RoomService } from '../room/interfaces/room-service.interface';
 
 @Injectable()
 export class FavoriteService {
