@@ -12,6 +12,7 @@ import { RoomModule } from './modules/room/room.module';
 import { FacilityModule } from './modules/facility/facility.module';
 import { OfferModule } from './modules/offer/offer.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { CarModule } from './modules/car/car.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     FacilityModule,
     OfferModule,
     DashboardModule,
+    CarModule,
   ],
   controllers: [AppController],
   providers: [AppService],
