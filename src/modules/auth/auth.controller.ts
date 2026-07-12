@@ -8,19 +8,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { AuthService } from './interfaces/auth-service.interface';
-import { TokenService } from './interfaces/token-service.interface';
-import { VerificationService } from './interfaces/verification-service.interface';
-import { PasswordService } from './interfaces/password-service.interface';
-import { UserService } from '../user/interfaces/user-service.interface';
+import { AuthService } from './services/auth.service';
+import { UserService } from '../user/user.service';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
-import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
-import { ResendVerificationDto } from './dtos/resend-verification.dto';
+import { EmailDto } from './dtos/email.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import {
   CurrentUser,
@@ -33,9 +29,6 @@ import { SuccessMessage } from '../../common/decorators/success-message.decorato
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly tokenService: TokenService,
-    private readonly verificationService: VerificationService,
-    private readonly passwordService: PasswordService,
     private readonly userService: UserService,
   ) {}
 
@@ -56,7 +49,7 @@ export class AuthController {
   @SuccessMessage('Token refreshed successfully')
   @Post('refresh-token')
   refresh(@Body() dto: RefreshTokenDto) {
-    return this.tokenService.refresh(dto.refreshToken);
+    return this.authService.refresh(dto.refreshToken);
   }
 
   @ApiBearerAuth('access-token')
@@ -70,25 +63,25 @@ export class AuthController {
   @SuccessMessage('Email verified successfully')
   @Get('verify-email')
   verifyEmail(@Query('token') token: string) {
-    return this.verificationService.verifyEmail(token);
+    return this.authService.verifyEmail(token);
   }
 
   @SuccessMessage('Verification email sent successfully')
   @Post('resend-verification')
-  resendVerification(@Body() dto: ResendVerificationDto) {
-    return this.verificationService.resendVerification(dto);
+  resendVerification(@Body() dto: EmailDto) {
+    return this.authService.resendVerification(dto);
   }
 
   @SuccessMessage('Password reset link sent successfully')
   @Post('forgot-password')
-  forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.passwordService.forgotPassword(dto);
+  forgotPassword(@Body() dto: EmailDto) {
+    return this.authService.forgotPassword(dto);
   }
 
   @SuccessMessage('Password has been reset successfully')
   @Post('reset-password')
   resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.passwordService.resetPassword(dto);
+    return this.authService.resetPassword(dto);
   }
 
   @ApiBearerAuth('access-token')
@@ -118,6 +111,6 @@ export class AuthController {
     @CurrentUser() user: ICurrentUser,
     @Body() dto: ChangePasswordDto,
   ) {
-    return this.passwordService.changePassword(user.userId, dto);
+    return this.authService.changePassword(user.userId, dto);
   }
 }
