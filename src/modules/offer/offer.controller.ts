@@ -11,7 +11,7 @@ import {
   UploadedFile,
   UseGuards,
 } from '@nestjs/common';
-import { OfferService } from './interfaces/offer-service.interface';
+import { OfferService } from './offer.service';
 import { CreateOfferDto } from './dtos/create-offer.dto';
 import { UpdateOfferDto } from './dtos/update-offer.dto';
 import { OfferQueryDto } from './dtos/offer-query.dto';

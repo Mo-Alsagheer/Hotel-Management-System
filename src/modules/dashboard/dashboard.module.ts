@@ -5,12 +5,7 @@ import { DashboardController } from './dashboard.controller';
 import { Room, RoomSchema } from '../room/schemas/room.schema';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { Booking, BookingSchema } from '../booking/schemas/booking.schema';
-
-// Concrete implementation
-import { MongooseDashboardService } from './dashboard.service';
-
-// Abstract contract
-import { DashboardService } from './interfaces/dashboard-service.interface';
+import { DashboardService } from './dashboard.service';
 
 @Module({
   imports: [
@@ -24,8 +19,6 @@ import { DashboardService } from './interfaces/dashboard-service.interface';
     }),
   ],
   controllers: [DashboardController],
-  providers: [
-    { provide: DashboardService, useClass: MongooseDashboardService },
-  ],
+  providers: [DashboardService],
 })
 export class DashboardModule {}

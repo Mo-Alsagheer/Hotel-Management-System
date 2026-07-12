@@ -1,5 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { DashboardService } from './interfaces/dashboard-service.interface';
+import { DashboardService } from './dashboard.service';
 import {
   DashboardStats,
   DashboardChartData,

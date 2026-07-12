@@ -13,24 +13,22 @@ import {
   BookingDocument,
   BookingStatus,
 } from '../booking/schemas/booking.schema';
-import { RoomService } from '../room/interfaces/room-service.interface';
-import { RoomRatingService } from '../room/interfaces/room-rating-service.interface';
+import { RoomService } from '../room/services/room.service';
 import { CreateReviewDto } from './dtos/create-review.dto';
+import { IReviewService } from './interfaces/review-service.interface';
 
 @Injectable()
-export class ReviewService {
+export class ReviewService implements IReviewService {
   constructor(
     @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>,
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     private readonly roomService: RoomService,
-    private readonly roomRatingService: RoomRatingService,
   ) {}
 
   async addReview(userId: string, roomId: string, dto: CreateReviewDto) {
-    // verify room exists
-    try {
-      await this.roomService.findOne(roomId);
-    } catch {
+    // verify room exists via fast lightweight index query
+    const exists = await this.roomService.exists(roomId);
+    if (!exists) {
       throw new NotFoundException(`Room with ID "${roomId}" not found`);
     }
 
@@ -68,16 +66,15 @@ export class ReviewService {
       comment: dto.comment,
     }).save();
 
-    await this.roomRatingService.updateAverageRating(roomId);
+    await this.roomService.updateAverageRating(roomId);
 
     return created;
   }
 
   async getRoomReviews(roomId: string, page = 1, limit = 10) {
-    // ensure room exists
-    try {
-      await this.roomService.findOne(roomId);
-    } catch {
+    // verify room exists via fast lightweight index query
+    const exists = await this.roomService.exists(roomId);
+    if (!exists) {
       throw new NotFoundException(`Room with ID "${roomId}" not found`);
     }
 
@@ -118,7 +115,7 @@ export class ReviewService {
 
     const roomId = review.roomId.toString();
     await this.reviewModel.findByIdAndDelete(reviewId).exec();
-    await this.roomRatingService.updateAverageRating(roomId);
+    await this.roomService.updateAverageRating(roomId);
 
     return { deleted: true };
   }

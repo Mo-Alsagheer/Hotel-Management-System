@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { FacilityService } from './interfaces/facility-service.interface';
+import { FacilityService } from './facility.service';
 import { CreateFacilityDto } from './dtos/create-facility.dto';
 import { UpdateFacilityDto } from './dtos/update-facility.dto';
 import { FacilityQueryDto } from './dtos/facility-query.dto';

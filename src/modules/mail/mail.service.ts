@@ -5,16 +5,15 @@ import {
   getVerificationEmailTemplate,
   getResetPasswordEmailTemplate,
 } from './templates';
-import { MailService } from './interfaces/mail-service.interface';
+import { IMailService } from './interfaces/mail-service.interface';
 
 @Injectable()
-export class NodemailerMailService extends MailService {
-  private readonly logger = new Logger(NodemailerMailService.name);
+export class MailService implements IMailService {
+  private readonly logger = new Logger(MailService.name);
   private readonly transporter?: nodemailer.Transporter;
   private readonly fromAddress: string;
 
   constructor(private readonly configService: ConfigService) {
-    super();
     const host = this.configService.get<string>('SMTP_HOST');
     const port = this.configService.get<number>('SMTP_PORT');
     const user = this.configService.get<string>('SMTP_USER');

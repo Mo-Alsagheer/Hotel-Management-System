@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -9,15 +10,13 @@ import { Facility, FacilityDocument } from './schemas/facility.schema';
 import { CreateFacilityDto } from './dtos/create-facility.dto';
 import { UpdateFacilityDto } from './dtos/update-facility.dto';
 import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
-import { FacilityService } from './interfaces/facility-service.interface';
+import { IFacilityService } from './interfaces/facility-service.interface';
 
 @Injectable()
-export class MongooseFacilityService extends FacilityService {
+export class FacilityService implements IFacilityService {
   constructor(
     @InjectModel(Facility.name) private facilityModel: Model<FacilityDocument>,
-  ) {
-    super();
-  }
+  ) {}
 
   async create(createFacilityDto: CreateFacilityDto): Promise<Facility> {
     try {
@@ -95,11 +94,13 @@ export class MongooseFacilityService extends FacilityService {
     return deletedFacility;
   }
 
-  async validateFacilitiesExist(ids: string[]): Promise<boolean> {
-    if (!ids || ids.length === 0) return true;
+  async validateFacilitiesExist(ids: string[]): Promise<void> {
+    if (!ids || ids.length === 0) return;
     const count = await this.facilityModel
       .countDocuments({ _id: { $in: ids } })
       .exec();
-    return count === ids.length;
+    if (count !== ids.length) {
+      throw new BadRequestException('One or more facility IDs are invalid');
+    }
   }
 }

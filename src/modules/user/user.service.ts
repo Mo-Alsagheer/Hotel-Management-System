@@ -6,16 +6,14 @@ import { UserQueryDto } from './dtos/user-query.dto';
 import { User, UserDocument } from './schemas/user.schema';
 import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
 import { UpdateProfileDto } from '../auth/dtos/update-profile.dto';
-import { UserService } from './interfaces/user-service.interface';
+import { IUserService } from './interfaces/user-service.interface';
 
 @Injectable()
-export class MongooseUserService extends UserService {
+export class UserService implements IUserService {
   constructor(
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
-  ) {
-    super();
-  }
+  ) {}
 
   async findAll(
     query: UserQueryDto,

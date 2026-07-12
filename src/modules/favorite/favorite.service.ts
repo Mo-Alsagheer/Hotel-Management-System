@@ -6,20 +6,20 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Favorite, FavoriteDocument } from './schemas/favorite.schema';
-import { RoomService } from '../room/interfaces/room-service.interface';
+import { RoomService } from '../room/services/room.service';
+import { IFavoriteService } from './interfaces/favorite-service.interface';
 
 @Injectable()
-export class FavoriteService {
+export class FavoriteService implements IFavoriteService {
   constructor(
     @InjectModel(Favorite.name) private favModel: Model<FavoriteDocument>,
     private readonly roomService: RoomService,
   ) {}
 
   async addFavorite(userId: string, roomId: string) {
-    // ensure room exists
-    try {
-      await this.roomService.findOne(roomId);
-    } catch {
+    // ensure room exists via lightweight index check
+    const exists = await this.roomService.exists(roomId);
+    if (!exists) {
       throw new NotFoundException(`Room with ID "${roomId}" not found`);
     }
 

@@ -2,12 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Facility, FacilitySchema } from './schemas/facility.schema';
 import { FacilityController } from './facility.controller';
-
-// Concrete implementation
-import { MongooseFacilityService } from './facility.service';
-
-// Abstract contract
-import { FacilityService } from './interfaces/facility-service.interface';
+import { FacilityService } from './facility.service';
 
 @Module({
   imports: [
@@ -16,7 +11,7 @@ import { FacilityService } from './interfaces/facility-service.interface';
     ]),
   ],
   controllers: [FacilityController],
-  providers: [{ provide: FacilityService, useClass: MongooseFacilityService }],
+  providers: [FacilityService],
   exports: [FacilityService],
 })
 export class FacilityModule {}

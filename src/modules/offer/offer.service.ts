@@ -5,17 +5,15 @@ import { Offer, OfferDocument } from './schemas/offer.schema';
 import { CreateOfferDto } from './dtos/create-offer.dto';
 import { UpdateOfferDto } from './dtos/update-offer.dto';
 import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
-import * as fs from 'fs';
-import * as path from 'path';
-import { OfferService } from './interfaces/offer-service.interface';
+import { FileStorageService } from '../file-storage/file-storage.service';
+import { IOfferService } from './interfaces/offer-service.interface';
 
 @Injectable()
-export class MongooseOfferService extends OfferService {
+export class OfferService implements IOfferService {
   constructor(
     @InjectModel(Offer.name) private offerModel: Model<OfferDocument>,
-  ) {
-    super();
-  }
+    private readonly fileStorageService: FileStorageService,
+  ) {}
 
   async create(
     createOfferDto: CreateOfferDto,
@@ -32,7 +30,7 @@ export class MongooseOfferService extends OfferService {
       return await createdOffer.save();
     } catch (error) {
       if (imagePath) {
-        this.cleanupFile(imagePath);
+        this.fileStorageService.deleteFile(imagePath);
       }
       throw error;
     }
@@ -83,7 +81,7 @@ export class MongooseOfferService extends OfferService {
     const offer = await this.offerModel.findById(id).exec();
     if (!offer) {
       if (newImagePath) {
-        this.cleanupFile(newImagePath);
+        this.fileStorageService.deleteFile(newImagePath);
       }
       throw new NotFoundException(`Offer with ID "${id}" not found`);
     }
@@ -109,13 +107,13 @@ export class MongooseOfferService extends OfferService {
       }
 
       if (newImagePath && oldImagePath) {
-        this.cleanupFile(oldImagePath);
+        this.fileStorageService.deleteFile(oldImagePath);
       }
 
       return updatedOffer;
     } catch (error) {
       if (newImagePath) {
-        this.cleanupFile(newImagePath);
+        this.fileStorageService.deleteFile(newImagePath);
       }
       throw error;
     }
@@ -128,20 +126,9 @@ export class MongooseOfferService extends OfferService {
     }
 
     if (offer.image) {
-      this.cleanupFile(offer.image);
+      this.fileStorageService.deleteFile(offer.image);
     }
 
     return offer;
-  }
-
-  private cleanupFile(filePath: string) {
-    try {
-      const fullPath = path.join(__dirname, '../../..', filePath);
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-      }
-    } catch (error: unknown) {
-      console.error('Error cleaning up file:', error);
-    }
   }
 }

@@ -14,18 +14,16 @@ import {
   DashboardStats,
   DashboardChartData,
 } from './interfaces/dashboard.interface';
-import { DashboardService } from './interfaces/dashboard-service.interface';
+import { IDashboardService } from './interfaces/dashboard-service.interface';
 
 @Injectable()
-export class MongooseDashboardService extends DashboardService {
+export class DashboardService implements IDashboardService {
   constructor(
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {
-    super();
-  }
+  ) {}
 
   async getStats(): Promise<DashboardStats> {
     const cacheKey = 'dashboard:stats';
