@@ -7,7 +7,6 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { CustomRequest } from '../interfaces/request.interface';
 import { SUCCESS_MESSAGE_KEY } from '../decorators/success-message.decorator';
 
 export interface ResponseEnvelope<T> {
@@ -39,16 +38,13 @@ export class ResponseInterceptor<T> implements NestInterceptor<
           return data as ResponseEnvelope<T>;
         }
 
-        const request = context.switchToHttp().getRequest<CustomRequest>();
-
         // Retrieve success message from metadata
         const metadataMessage = this.reflector.get<string>(
           SUCCESS_MESSAGE_KEY,
           context.getHandler(),
         );
 
-        const message =
-          metadataMessage || request.successMessage || 'Operation successful';
+        const message = metadataMessage || 'Operation successful';
 
         return {
           status: 'success',

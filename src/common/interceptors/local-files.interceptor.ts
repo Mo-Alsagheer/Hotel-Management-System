@@ -25,11 +25,6 @@ export function LocalFilesInterceptor(
 ): Type<NestInterceptor> {
   const uploadDir = options.path;
 
-  // Ensure directory exists at boot/instantiation time
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
   const multerOptions = {
     limits: {
       fileSize: options.maxFileSize || 5 * 1024 * 1024, // Default 5MB
@@ -54,7 +49,15 @@ export function LocalFilesInterceptor(
       callback(null, true);
     },
     storage: diskStorage({
-      destination: uploadDir,
+      destination: (_req, _file, callback) => {
+        fs.mkdir(uploadDir, { recursive: true }, (err) => {
+          if (err) {
+            callback(err, uploadDir);
+          } else {
+            callback(null, uploadDir);
+          }
+        });
+      },
       filename: (_req, file, callback) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         callback(null, `${uniqueSuffix}${extname(file.originalname)}`);

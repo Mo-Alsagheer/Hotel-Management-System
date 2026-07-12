@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserRole } from '../../modules/user/schemas/user.schema';
-import { UserService } from '../../modules/user/interfaces/user-service.interface';
+import { UserService } from '../../modules/user/user.service';
 
 export interface JwtPayload {
   sub: string;
@@ -43,9 +43,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      userId: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
     };
   }
 }
