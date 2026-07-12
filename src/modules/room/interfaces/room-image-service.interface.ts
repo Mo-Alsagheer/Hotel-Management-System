@@ -1,4 +1,4 @@
-export abstract class RoomImageService {
-  abstract deleteImageFile(imagePath: string): void;
-  abstract cleanupFiles(filePaths: string[]): void;
+export interface IRoomImageService {
+  cleanupFiles(filePaths: string[]): void;
+  deleteImageFile(filePath: string): void;
 }

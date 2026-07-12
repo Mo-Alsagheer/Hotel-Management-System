@@ -1,30 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
-import { RoomImageService } from '../interfaces/room-image-service.interface';
+import { FileStorageService } from '../../file-storage/file-storage.service';
+import { IRoomImageService } from '../interfaces/room-image-service.interface';
 
 @Injectable()
-export class LocalRoomImageService extends RoomImageService {
-  constructor() {
-    super();
-  }
+export class RoomImageService implements IRoomImageService {
+  constructor(private readonly fileStorageService: FileStorageService) {}
 
   cleanupFiles(filePaths: string[]): void {
-    if (!filePaths || filePaths.length === 0) return;
-    filePaths.forEach((fp) => {
-      this.deleteImageFile(fp);
-    });
+    this.fileStorageService.deleteFiles(filePaths);
   }
 
   deleteImageFile(filePath: string): void {
-    if (!filePath) return;
-    try {
-      const fullPath = path.join(__dirname, '../../..', filePath);
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-      }
-    } catch (error: unknown) {
-      console.error('Error cleaning up file:', error);
-    }
+    this.fileStorageService.deleteFile(filePath);
   }
 }

@@ -8,27 +8,31 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import type { QueryFilter } from 'mongoose';
 import { Room, RoomDocument } from '../schemas/room.schema';
-import { FacilityService } from '../../facility/interfaces/facility-service.interface';
+import { FacilityService } from '../../facility/facility.service';
 import { CreateRoomDto } from '../dtos/create-room.dto';
 import { UpdateRoomDto } from '../dtos/update-room.dto';
 import { RoomQueryDto } from '../dtos/room-query.dto';
 import { PaginatedResponse } from '../../../common/interfaces/paginated-response.interface';
-import { RoomService } from '../interfaces/room-service.interface';
-import { RoomAvailabilityService } from '../interfaces/room-availability-service.interface';
-import { RoomImageService } from '../interfaces/room-image-service.interface';
-import { RoomRatingService } from '../interfaces/room-rating-service.interface';
+import { RoomImageService } from './room-image.service';
+import {
+  Booking,
+  BookingDocument,
+  BookingStatus,
+} from '../../booking/schemas/booking.schema';
+import { Review, ReviewDocument } from '../../review/schemas/review.schema';
+import { IRoomService } from '../interfaces/room-service.interface';
 
 @Injectable()
-export class MongooseRoomService extends RoomService {
+export class RoomService implements IRoomService {
   constructor(
     @InjectModel(Room.name) private readonly roomModel: Model<RoomDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
+    @InjectModel(Review.name)
+    private readonly reviewModel: Model<ReviewDocument>,
     private readonly facilityService: FacilityService,
-    private readonly roomAvailabilityService: RoomAvailabilityService,
     private readonly roomImageService: RoomImageService,
-    private readonly roomRatingService: RoomRatingService,
-  ) {
-    super();
-  }
+  ) {}
 
   async create(
     createRoomDto: CreateRoomDto,
@@ -36,13 +40,14 @@ export class MongooseRoomService extends RoomService {
   ): Promise<Room> {
     // 1. Verify facilities exist
     if (createRoomDto.facilities && createRoomDto.facilities.length > 0) {
-      const allExist = await this.facilityService.validateFacilitiesExist(
-        createRoomDto.facilities,
-      );
-      if (!allExist) {
+      try {
+        await this.facilityService.validateFacilitiesExist(
+          createRoomDto.facilities,
+        );
+      } catch (error) {
         // Clean up uploaded files if validation fails
         this.roomImageService.cleanupFiles(imagePaths);
-        throw new BadRequestException('One or more facility IDs are invalid');
+        throw error;
       }
     }
 
@@ -82,11 +87,7 @@ export class MongooseRoomService extends RoomService {
     }
 
     if (checkIn && checkOut) {
-      const occupiedRoomIds =
-        await this.roomAvailabilityService.getOccupiedRoomIds(
-          checkIn,
-          checkOut,
-        );
+      const occupiedRoomIds = await this.getOccupiedRoomIds(checkIn, checkOut);
       query._id = { $nin: occupiedRoomIds };
     }
 
@@ -115,12 +116,12 @@ export class MongooseRoomService extends RoomService {
 
   async findOne(id: string): Promise<
     Room & {
-      reviews: {
+      reviews: Array<{
         id: Types.ObjectId;
         rating: number;
         comment?: string;
         userName: string;
-      }[];
+      }>;
     }
   > {
     const room = await this.roomModel
@@ -132,8 +133,8 @@ export class MongooseRoomService extends RoomService {
       throw new NotFoundException(`Room with ID "${id}" not found`);
     }
 
-    // Fetch and format reviews via RoomRatingService
-    const formattedReviews = await this.roomRatingService.getRoomReviews(
+    // Fetch and format reviews
+    const formattedReviews = await this.getRoomReviews(
       new Types.ObjectId(room._id),
     );
 
@@ -141,6 +142,14 @@ export class MongooseRoomService extends RoomService {
       ...room,
       reviews: formattedReviews,
     };
+  }
+
+  async exists(id: string): Promise<boolean> {
+    if (!Types.ObjectId.isValid(id)) return false;
+    const doc = await this.roomModel
+      .exists({ _id: id, isDeleted: false })
+      .exec();
+    return !!doc;
   }
 
   async update(
@@ -155,12 +164,13 @@ export class MongooseRoomService extends RoomService {
     }
 
     if (updateRoomDto.facilities && updateRoomDto.facilities.length > 0) {
-      const allExist = await this.facilityService.validateFacilitiesExist(
-        updateRoomDto.facilities,
-      );
-      if (!allExist) {
+      try {
+        await this.facilityService.validateFacilitiesExist(
+          updateRoomDto.facilities,
+        );
+      } catch (error) {
         this.roomImageService.cleanupFiles(newImagePaths);
-        throw new BadRequestException('One or more facility IDs are invalid');
+        throw error;
       }
     }
 
@@ -197,7 +207,7 @@ export class MongooseRoomService extends RoomService {
     }
 
     // Check if there are active/future bookings before soft deleting
-    await this.roomAvailabilityService.validateRoomDeletion(id);
+    await this.validateRoomDeletion(id);
 
     room.isDeleted = true;
     await room.save();
@@ -232,5 +242,90 @@ export class MongooseRoomService extends RoomService {
     this.roomImageService.deleteImageFile(imagePath);
 
     return { message: 'Room image deleted successfully' };
+  }
+
+  // --- Availability Logic (Consolidated) ---
+
+  async getOccupiedRoomIds(
+    checkIn: Date,
+    checkOut: Date,
+  ): Promise<Types.ObjectId[]> {
+    if (checkIn >= checkOut) {
+      throw new BadRequestException(
+        'checkIn date must be before checkOut date',
+      );
+    }
+    const overlappingBookings = await this.bookingModel
+      .find({
+        status: { $ne: BookingStatus.CANCELLED },
+        $or: [{ checkIn: { $lt: checkOut }, checkOut: { $gt: checkIn } }],
+      })
+      .select('roomId')
+      .lean()
+      .exec();
+
+    return overlappingBookings.map((b) => new Types.ObjectId(b.roomId));
+  }
+
+  async validateRoomDeletion(roomId: string): Promise<void> {
+    const activeBooking = await this.bookingModel
+      .findOne({
+        roomId: new Types.ObjectId(roomId),
+        status: { $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+        checkOut: { $gte: new Date() },
+      })
+      .lean()
+      .exec();
+
+    if (activeBooking) {
+      throw new BadRequestException(
+        'Cannot delete room with active/upcoming bookings',
+      );
+    }
+  }
+
+  // --- Ratings & Reviews Logic (Consolidated & Optimized) ---
+
+  async getRoomReviews(roomId: Types.ObjectId): Promise<
+    Array<{
+      id: Types.ObjectId;
+      rating: number;
+      comment?: string;
+      userName: string;
+    }>
+  > {
+    const reviews = await this.reviewModel
+      .find({ roomId })
+      .populate<{ userId: { name?: string } }>('userId', 'name')
+      .lean()
+      .exec();
+
+    return reviews.map((r) => ({
+      id: r._id,
+      rating: r.rating,
+      comment: r.comment,
+      userName: r.userId?.name || 'Anonymous',
+    }));
+  }
+
+  async updateAverageRating(roomId: string): Promise<void> {
+    const stats = (await this.reviewModel
+      .aggregate([
+        { $match: { roomId: new Types.ObjectId(roomId) } },
+        {
+          $group: {
+            _id: '$roomId',
+            avgRating: { $avg: '$rating' },
+          },
+        },
+      ])
+      .exec()) as unknown as Array<{ _id: Types.ObjectId; avgRating: number }>;
+
+    const averageRating =
+      stats.length > 0 ? parseFloat(stats[0].avgRating.toFixed(2)) : 0;
+
+    await this.roomModel
+      .updateOne({ _id: roomId }, { $set: { averageRating } })
+      .exec();
   }
 }

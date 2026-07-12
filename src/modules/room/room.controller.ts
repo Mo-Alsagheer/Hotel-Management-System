@@ -11,7 +11,7 @@ import {
   UploadedFiles,
   UseGuards,
 } from '@nestjs/common';
-import { RoomService } from './interfaces/room-service.interface';
+import { RoomService } from './services/room.service';
 import { CreateRoomDto } from './dtos/create-room.dto';
 import { UpdateRoomDto } from './dtos/update-room.dto';
 import { RoomQueryDto } from './dtos/room-query.dto';
