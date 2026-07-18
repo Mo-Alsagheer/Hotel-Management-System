@@ -6,6 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { MulterError } from 'multer';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -43,6 +44,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
         }
       } else if (typeof resBody === 'string') {
         message = resBody;
+      }
+    } else if (exception instanceof MulterError) {
+      if (exception.code === 'LIMIT_FILE_SIZE') {
+        status = HttpStatus.PAYLOAD_TOO_LARGE;
+        message = 'File size is too large. Maximum limit is 5MB.';
+      } else {
+        status = HttpStatus.BAD_REQUEST;
+        message = exception.message || 'File upload error';
       }
     } else if (exception instanceof Error) {
       message = exception.message;

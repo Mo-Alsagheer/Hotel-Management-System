@@ -6,8 +6,13 @@ import { validate } from './core/config/env.validation';
 import { DatabaseModule } from './core/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { ReviewModule } from './modules/review/review.module';
+import { FavoriteModule } from './modules/favorite/favorite.module';
 import { RoomModule } from './modules/room/room.module';
 import { FacilityModule } from './modules/facility/facility.module';
+import { OfferModule } from './modules/offer/offer.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { FileStorageModule } from './modules/file-storage/file-storage.module';
 
 @Module({
   imports: [
@@ -17,10 +22,15 @@ import { FacilityModule } from './modules/facility/facility.module';
       validate,
     }),
     DatabaseModule,
+    FileStorageModule,
     AuthModule,
     UserModule,
+    ReviewModule,
+    FavoriteModule,
     RoomModule,
     FacilityModule,
+    OfferModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

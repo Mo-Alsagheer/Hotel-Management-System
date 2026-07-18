@@ -2,15 +2,18 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Facility, FacilityDocument } from './schemas/facility.schema';
 import { CreateFacilityDto } from './dtos/create-facility.dto';
 import { UpdateFacilityDto } from './dtos/update-facility.dto';
+import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
+import { IFacilityService } from './interfaces/facility-service.interface';
 
 @Injectable()
-export class FacilityService {
+export class FacilityService implements IFacilityService {
   constructor(
     @InjectModel(Facility.name) private facilityModel: Model<FacilityDocument>,
   ) {}
@@ -29,26 +32,17 @@ export class FacilityService {
     }
   }
 
-  async findAll(
-    page = 1,
-    limit = 10,
-  ): Promise<{
-    data: Facility[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
+  async findAll(page = 1, limit = 10): Promise<PaginatedResponse<Facility>> {
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.facilityModel.find().skip(skip).limit(limit).exec(),
+      this.facilityModel.find().skip(skip).limit(limit).lean().exec(),
       this.facilityModel.countDocuments().exec(),
     ]);
 
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data,
+      data: data as Facility[],
       total,
       page,
       limit,
@@ -57,11 +51,11 @@ export class FacilityService {
   }
 
   async findOne(id: string): Promise<Facility> {
-    const facility = await this.facilityModel.findById(id).exec();
+    const facility = await this.facilityModel.findById(id).lean().exec();
     if (!facility) {
       throw new NotFoundException(`Facility with ID "${id}" not found`);
     }
-    return facility;
+    return facility as Facility;
   }
 
   async update(
@@ -100,12 +94,13 @@ export class FacilityService {
     return deletedFacility;
   }
 
-  // Helper method to validate if an array of facility IDs exist in DB
-  async validateFacilitiesExist(ids: string[]): Promise<boolean> {
-    if (!ids || ids.length === 0) return true;
+  async validateFacilitiesExist(ids: string[]): Promise<void> {
+    if (!ids || ids.length === 0) return;
     const count = await this.facilityModel
       .countDocuments({ _id: { $in: ids } })
       .exec();
-    return count === ids.length;
+    if (count !== ids.length) {
+      throw new BadRequestException('One or more facility IDs are invalid');
+    }
   }
 }

@@ -8,7 +8,12 @@ export class Review {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Room', required: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Room',
+    required: true,
+    index: true,
+  })
   roomId: Types.ObjectId;
 
   @Prop({
@@ -28,3 +33,4 @@ export class Review {
 }
 
 export const ReviewSchema = SchemaFactory.createForClass(Review);
+ReviewSchema.index({ userId: 1, roomId: 1 }, { unique: true });

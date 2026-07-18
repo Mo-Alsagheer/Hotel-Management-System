@@ -4,15 +4,21 @@ import { Model, Types } from 'mongoose';
 import { PaginationQueryDto } from '../../common/dtos/pagination-query.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
 import { User, UserDocument } from './schemas/user.schema';
+import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
+import { UpdateProfileDto } from '../auth/dtos/update-profile.dto';
+import { IUserService } from './interfaces/user-service.interface';
 
 @Injectable()
-export class UserService {
+export class UserService implements IUserService {
   constructor(
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async findAll(query: UserQueryDto, pagination: PaginationQueryDto) {
+  async findAll(
+    query: UserQueryDto,
+    pagination: PaginationQueryDto,
+  ): Promise<PaginatedResponse<Partial<User>>> {
     const { search } = query;
     const { page = 1, limit = 10 } = pagination;
     const filter: Record<string, unknown> = { isActive: true };
@@ -39,26 +45,60 @@ export class UserService {
     };
   }
 
-  async findOneById(id: string) {
+  async findOneById(id: string): Promise<UserDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException('Invalid user ID.');
     }
 
-    const user = await this.userModel.findById(id).select('-password');
+    const user = await this.userModel.findById(id).select('-password').exec();
     if (!user) {
       throw new NotFoundException('User not found.');
     }
     return user;
   }
 
-  async deactivate(id: string) {
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<UserDocument> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new NotFoundException('Invalid user ID.');
+    }
+
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          ...(dto.name ? { name: dto.name } : {}),
+          ...(dto.phone ? { phone: dto.phone } : {}),
+          ...(dto.profileImage ? { profileImage: dto.profileImage } : {}),
+        },
+        { new: true, runValidators: true, select: '-password' },
+      )
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    return user;
+  }
+
+  async deactivate(
+    id: string,
+    adminUserId: string,
+  ): Promise<{ message: string }> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException('Invalid user ID.');
     }
 
     const user = await this.userModel.findByIdAndUpdate(
       id,
-      { isActive: false },
+      {
+        isActive: false,
+        deletedAt: new Date(),
+        deletedBy: adminUserId,
+      },
       { new: true, select: '-password' },
     );
 

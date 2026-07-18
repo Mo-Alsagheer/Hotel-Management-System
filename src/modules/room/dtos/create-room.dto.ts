@@ -9,22 +9,30 @@ import {
   IsMongoId,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRoomDto {
+  @ApiProperty({ example: '101', description: 'Unique room number' })
   @IsString()
   @IsNotEmpty()
   roomNumber: string;
 
+  @ApiProperty({ example: 2, description: 'Maximum guest capacity' })
   @Type(() => Number)
   @IsNumber()
   @Min(1)
   capacity: number;
 
+  @ApiProperty({ example: 150, description: 'Price per night in USD' })
   @Type(() => Number)
   @IsNumber()
   @Min(0)
   price: number;
 
+  @ApiPropertyOptional({
+    example: 10,
+    description: 'Discount percentage (0-100)',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -32,10 +40,19 @@ export class CreateRoomDto {
   @Max(100)
   discount?: number;
 
+  @ApiPropertyOptional({
+    example: 'A luxury double room with sea view',
+    description: 'Description of the room',
+  })
   @IsString()
   @IsOptional()
   description?: string;
 
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['60d5ec4934b123456789abcd'],
+    description: 'Array of facility ObjectIds',
+  })
   @IsOptional()
   @Transform(({ value }) => {
     const val = value as unknown;

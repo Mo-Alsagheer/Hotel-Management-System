@@ -7,23 +7,24 @@ import {
   Body,
   Param,
   Query,
-  Req,
   UseInterceptors,
   UploadedFiles,
   UseGuards,
 } from '@nestjs/common';
-import { RoomService } from './room.service';
+import { RoomService } from './services/room.service';
 import { CreateRoomDto } from './dtos/create-room.dto';
 import { UpdateRoomDto } from './dtos/update-room.dto';
 import { RoomQueryDto } from './dtos/room-query.dto';
-import * as requestInterface from '../../common/interfaces/request.interface';
 import { LocalFilesInterceptor } from '../../common/interceptors/local-files.interceptor';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../user/schemas/user.schema';
+import { SuccessMessage } from '../../common/decorators/success-message.decorator';
+import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 
+@ApiTags('Rooms')
 @Controller()
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
@@ -32,47 +33,32 @@ export class RoomController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Room created successfully')
   @Post('admin/rooms')
   @UseInterceptors(
     LocalFilesInterceptor({
       fieldName: 'images',
       maxCount: 10,
       path: './uploads/rooms',
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'],
+      maxFileSize: 5 * 1024 * 1024,
     }),
   )
   async create(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() createRoomDto: CreateRoomDto,
-    @Req() req: requestInterface.CustomRequest,
   ) {
     const filePaths = files?.map((f) => `/uploads/rooms/${f.filename}`) || [];
-    req.successMessage = 'Room created successfully';
     return this.roomService.create(createRoomDto, filePaths);
-  }
-
-  // 2. Admin: Get All Rooms
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Get('admin/rooms')
-  async findAllAdmin(
-    @Query() query: RoomQueryDto,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Rooms retrieved successfully';
-    return this.roomService.findAllAdmin(query.page, query.limit, query.search);
   }
 
   // 3. Admin: Get Single Room
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Room retrieved successfully')
   @Get('admin/rooms/:id')
-  async findOneAdmin(
-    @Param('id') id: string,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Room retrieved successfully';
+  async findOneAdmin(@Param('id', ParseObjectIdPipe) id: string) {
     return this.roomService.findOne(id);
   }
 
@@ -80,22 +66,23 @@ export class RoomController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Room updated successfully')
   @Put('admin/rooms/:id')
   @UseInterceptors(
     LocalFilesInterceptor({
       fieldName: 'images',
       maxCount: 10,
       path: './uploads/rooms',
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'],
+      maxFileSize: 5 * 1024 * 1024,
     }),
   )
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: string,
     @UploadedFiles() files: Express.Multer.File[],
     @Body() updateRoomDto: UpdateRoomDto,
-    @Req() req: requestInterface.CustomRequest,
   ) {
     const filePaths = files?.map((f) => `/uploads/rooms/${f.filename}`) || [];
-    req.successMessage = 'Room updated successfully';
     return this.roomService.update(id, updateRoomDto, filePaths);
   }
 
@@ -103,38 +90,36 @@ export class RoomController {
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @SuccessMessage('Room deleted successfully')
   @Delete('admin/rooms/:id')
-  async delete(
-    @Param('id') id: string,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Room deleted successfully';
+  async delete(@Param('id', ParseObjectIdPipe) id: string) {
     return this.roomService.delete(id);
   }
 
   // 6. Public User: Get Available Rooms
+  @SuccessMessage('Rooms retrieved successfully')
   @Get('rooms')
-  async findAllPublic(
-    @Query() query: RoomQueryDto,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Rooms retrieved successfully';
-    return this.roomService.findAllPublic(
-      query.page,
-      query.limit,
-      query.checkIn,
-      query.checkOut,
-      query.capacity,
-    );
+  async findAllPublic(@Query() query: RoomQueryDto) {
+    return this.roomService.findAll(query);
   }
 
   // 7. Public User: Get Single Room Details
+  @SuccessMessage('Room details retrieved successfully')
   @Get('rooms/:id')
-  async findOnePublic(
-    @Param('id') id: string,
-    @Req() req: requestInterface.CustomRequest,
-  ) {
-    req.successMessage = 'Room details retrieved successfully';
+  async findOnePublic(@Param('id', ParseObjectIdPipe) id: string) {
     return this.roomService.findOne(id);
+  }
+
+  // 8. Admin: Delete Room Image
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @SuccessMessage('Room image deleted successfully')
+  @Delete('admin/rooms/:id/images/:imageName')
+  async removeImage(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Param('imageName') imageName: string,
+  ) {
+    return this.roomService.removeImage(id, imageName);
   }
 }
