@@ -15,6 +15,12 @@ import { UserRole } from './schemas/user.schema';
 import { PaginationQueryDto } from '../../common/dtos/pagination-query.dto';
 import { UserQueryDto } from './dtos/user-query.dto';
 
+import {
+  CurrentUser,
+  ICurrentUser,
+} from '../../common/decorators/current-user.decorator';
+import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
+
 @ApiTags('Admin Users')
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,13 +39,16 @@ export class UserController {
 
   @Roles(UserRole.ADMIN)
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseObjectIdPipe) id: string) {
     return this.userService.findOneById(id);
   }
 
   @Roles(UserRole.ADMIN)
   @Delete(':id')
-  deactivate(@Param('id') id: string) {
-    return this.userService.deactivate(id);
+  deactivate(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() admin: ICurrentUser,
+  ) {
+    return this.userService.deactivate(id, admin.userId);
   }
 }

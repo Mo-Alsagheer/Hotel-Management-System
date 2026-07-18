@@ -4,9 +4,10 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { CustomRequest } from '../interfaces/request.interface';
+import { SUCCESS_MESSAGE_KEY } from '../decorators/success-message.decorator';
 
 export interface ResponseEnvelope<T> {
   status: string;
@@ -19,6 +20,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<
   T,
   ResponseEnvelope<T>
 > {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(
     context: ExecutionContext,
     next: CallHandler<T>,
@@ -35,8 +38,13 @@ export class ResponseInterceptor<T> implements NestInterceptor<
           return data as ResponseEnvelope<T>;
         }
 
-        const request = context.switchToHttp().getRequest<CustomRequest>();
-        const message = request.successMessage || 'Operation successful';
+        // Retrieve success message from metadata
+        const metadataMessage = this.reflector.get<string>(
+          SUCCESS_MESSAGE_KEY,
+          context.getHandler(),
+        );
+
+        const message = metadataMessage || 'Operation successful';
 
         return {
           status: 'success',
